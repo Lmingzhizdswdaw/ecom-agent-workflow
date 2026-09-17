@@ -1,0 +1,56 @@
+# ecom-agent-workflow · 业务规则配置
+# 全部值为示例，真实业务值请自行替换。改规则不必改代码。
+
+constants:
+  group: 示例一组                     # 广告计划名前缀（组）
+  operator: 示例操作人
+  platform_code: pdd                 # 平台码
+  shop_key: demo-pdd-示例店铺          # 广告商品库中的店铺
+  business_unit: 示例业务单元
+  brand: "无"                        # 商品库品牌字段固定值
+  landing_page_type: 小程序            # 跳转类型
+  material_root: 素材库               # 素材库根目录名
+
+thresholds:
+  similarity_pass: 0.90              # 素材与基准图相似度 ≥90% 通过
+  similarity_granularity: 款型级       # 形状/结构/材质/大小/人群不同即不算同一产品；颜色图案差异不计
+  material_min_pass: 5               # 通过条数 <5 → 弃品（不硬凑）
+  material_max_take: 15              # 单次取用上限；超出部分直接截断丢弃，不做分批
+
+accounts:
+  plans_per_account: 2               # 单个广告户最多条数（平台/业务约束）
+  plans_per_product: 4               # 业务要求：一个品 4 条广告
+  # 推导：plans_per_product ÷ plans_per_account = 2，因此每个商品需要 2 个广告户
+
+pricing:
+  round_mode: floor                  # 截断取整，不四舍五入（保守取值，不上穿成本线）
+  currency: CNY
+
+naming:
+  template: "{group}+{operator}+{abbr}+{product_id}+{platform_code}+{shop_key}[{ts}][{rand_id}]"
+  abbr_len: [2, 5]                   # 商品缩写长度区间（生产环境由模型理解生成）
+  rand_id_len: 6                     # 随机ID 长度：同名计划防重
+
+fallback:
+  attribute_no_match: first          # 商品属性无对应项 → 直接选第一个
+  category_mismatch: continue        # 类目选错不阻断（内部中间层，终端用户不可见）
+
+# 商品缩写的确定性兜底词表（生产环境由模型生成，此处仅为可复现的演示实现）
+abbr_core_words:
+  - 护膝
+  - 泡脚桶
+  - 压缩袋
+  - 腰靠垫
+  - 护腰带
+  - 收纳袋
+
+guardrails:
+  no_touch_zones:                    # 明确不可触碰，保持默认
+    - 动态商品广告信息
+    - 定向包
+  destructive_actions_require_confirm:   # 花钱/不可逆动作，必须人工逐次确认
+    - 提交广告计划
+    - 修改出价
+    - 修改预算
+    - 开启或关闭投放
+  auth_boundary: manual              # 平台登录与验证码必须人工，Agent 不接触凭证

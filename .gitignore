@@ -1,0 +1,13 @@
+# 生成的产物，不入库
+demo/plans.csv
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 编辑器
+.vscode/
+.idea/
+.DS_Store
