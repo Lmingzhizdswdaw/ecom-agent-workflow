@@ -113,7 +113,7 @@ def build_plans(products, mapping, rules, rng, ts):
                         "出价原值": raw_price,
                         "广告名称": plan_name,
                         "落地页链接": product["商品落地页"],
-                        "素材目录": f"{c['material_root']}/{pid}",
+                        "素材目录": product["素材路径"],
                         "商品库店铺": c["shop_key"],
                         "业务单元": c["business_unit"],
                         "品牌": c["brand"],

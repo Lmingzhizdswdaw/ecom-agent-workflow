@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>批量搭建广告 · 本地复刻演示页</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --line:#e3e6eb; --line-strong:#d0d5dd;
+    --text:#1f2329; --text-2:#5a6472; --text-3:#8d97a5;
+    --brand:#2f6bff; --brand-soft:#eef3ff; --ok:#12a150; --warn:#e8890c; --danger:#d92d20;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.6 "Microsoft YaHei","PingFang SC",-apple-system,sans-serif;}
+  .topbar{height:52px;background:#fff;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;padding:0 20px;gap:12px;}
+  .topbar .logo{width:22px;height:22px;border-radius:5px;background:var(--brand);}
+  .topbar h1{font-size:15px;font-weight:600;margin:0;}
+  .topbar .crumb{color:var(--text-3);font-size:13px;}
+  .tag-demo{margin-left:auto;font-size:12px;color:var(--warn);background:#fff7e6;
+    border:1px solid #ffe0a3;border-radius:4px;padding:2px 8px;}
+
+  .layout{display:flex;gap:16px;padding:16px 20px 40px;align-items:flex-start;}
+  .rail{width:190px;flex:none;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px;}
+  .rail h2{font-size:12px;color:var(--text-3);margin:0 0 10px;font-weight:600;letter-spacing:.5px;}
+  .rail ol{list-style:none;margin:0;padding:0;counter-reset:s;}
+  .rail li{counter-increment:s;display:flex;gap:8px;align-items:flex-start;
+    padding:7px 8px;border-radius:6px;color:var(--text-2);font-size:13px;}
+  .rail li::before{content:counter(s);flex:none;width:18px;height:18px;border-radius:50%;
+    background:#eef0f4;color:var(--text-3);font-size:11px;display:flex;
+    align-items:center;justify-content:center;margin-top:1px;}
+  .rail li.done{color:var(--ok);}
+  .rail li.done::before{background:#e6f7ee;color:var(--ok);}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;}
+  .card-hd{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);}
+  .card-hd .no{width:20px;height:20px;border-radius:50%;background:var(--brand-soft);
+    color:var(--brand);font-size:11px;display:flex;align-items:center;justify-content:center;flex:none;}
+  .card-hd h3{font-size:14px;margin:0;font-weight:600;}
+  .card-hd .sub{color:var(--text-3);font-size:12px;}
+  .card-hd .right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+  .card-bd{padding:14px 16px;}
+
+  .btn{border:1px solid var(--line-strong);background:#fff;color:var(--text);
+    border-radius:5px;padding:5px 14px;font-size:13px;cursor:pointer;font-family:inherit;}
+  .btn:hover{border-color:var(--brand);color:var(--brand);}
+  .btn-primary{background:var(--brand);border-color:var(--brand);color:#fff;}
+  .btn-primary:hover{background:#1f57d8;color:#fff;border-color:#1f57d8;}
+  .btn-sm{padding:3px 10px;font-size:12px;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  .field{display:flex;gap:10px;align-items:center;margin-bottom:12px;}
+  .field > label{width:110px;flex:none;color:var(--text-2);text-align:right;font-size:13px;}
+  input[type=text],select{height:30px;border:1px solid var(--line-strong);border-radius:5px;
+    padding:0 9px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;min-width:240px;}
+  input[type=text]:focus,select:focus{outline:none;border-color:var(--brand);}
+  .editable{min-height:30px;min-width:320px;border:1px solid var(--line-strong);border-radius:5px;
+    padding:5px 9px;font-size:13px;background:#fff;}
+  .editable:focus{outline:none;border-color:var(--brand);}
+  .editable[data-empty="1"]::before{content:attr(data-ph);color:var(--text-3);}
+  .hint{color:var(--text-3);font-size:12px;}
+  .ro{color:var(--text-2);background:#fafbfc;border:1px dashed var(--line-strong);
+    border-radius:5px;padding:5px 9px;min-width:320px;font-size:13px;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{background:var(--brand-soft);border:1px solid #cfe0ff;color:#1f57d8;
+    border-radius:4px;padding:2px 8px;font-size:12px;}
+  .chip-muted{background:#f2f4f7;border-color:var(--line);color:var(--text-2);}
+
+  .mask{position:fixed;inset:0;background:rgba(15,20,30,.35);display:none;
+    align-items:center;justify-content:center;z-index:20;}
+  .mask.on{display:flex;}
+  .modal{background:#fff;border-radius:10px;width:520px;max-height:70vh;display:flex;
+    flex-direction:column;box-shadow:0 12px 40px rgba(15,20,30,.2);}
+  .modal h4{margin:0;padding:14px 18px;font-size:14px;border-bottom:1px solid var(--line);}
+  .modal .bd{padding:14px 18px;overflow:auto;}
+  .modal .ft{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;}
+  .rowlist{display:flex;flex-direction:column;gap:6px;}
+  .rowitem{display:flex;align-items:center;gap:10px;border:1px solid var(--line);
+    border-radius:6px;padding:8px 12px;font-size:13px;cursor:pointer;}
+  .rowitem:hover{border-color:var(--brand);background:#fbfcff;}
+  .rowitem.sel{border-color:var(--brand);background:var(--brand-soft);}
+  .rowitem .meta{margin-left:auto;color:var(--text-3);font-size:12px;}
+
+  .footer-bar{display:flex;gap:10px;justify-content:flex-end;background:#fff;
+    border:1px solid var(--line);border-radius:8px;padding:12px 16px;}
+  .log{background:#fbfcfd;border:1px solid var(--line);border-radius:8px;padding:10px 14px;
+    font:12px/1.8 Consolas,Monaco,monospace;color:var(--text-2);max-height:170px;overflow:auto;}
+  .log b{color:var(--ok);}
+  .log i{color:var(--danger);font-style:normal;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"></div>
+  <h1>批量搭建广告</h1>
+  <span class="crumb">投放平台 / 广告管理 / 批量搭建广告</span>
+  <span class="tag-demo">本地复刻演示页 · 全部为假数据</span>
+</div>
+
+<div class="layout">
+  <aside class="rail">
+    <h2>搭建流程</h2>
+    <ol>
+      <li id="r1">引用规则模版</li>
+      <li id="r2">选择媒体账号</li>
+      <li id="r3">广告基本信息</li>
+      <li id="r4">定向包</li>
+      <li id="r5">创意基本信息</li>
+      <li id="r6">创意素材</li>
+    </ol>
+  </aside>
+
+  <main class="main">
+
+    <!-- 1 规则模版 -->
+    <section class="card" id="sec-rule">
+      <div class="card-hd">
+        <span class="no">1</span><h3>规则模版</h3>
+        <span class="sub" id="rule-state">未引用</span>
+        <span class="right"><button class="btn btn-sm" id="btn-rule-template">引用规则模版</button></span>
+      </div>
+    </section>
+
+    <!-- 2 媒体账号 -->
+    <section class="card" id="sec-accounts">
+      <div class="card-hd">
+        <span class="no">2</span><h3>媒体账号</h3>
+        <span class="sub" id="acc-state">已选 0 个</span>
+        <span class="right"><button class="btn btn-sm" id="btn-edit-accounts">更改</button></span>
+      </div>
+      <div class="card-bd"><div class="chips" id="acc-chips"><span class="hint">尚未选择广告户</span></div></div>
+    </section>
+
+    <!-- 3 广告基本信息 -->
+    <section class="card" id="sec-basic">
+      <div class="card-hd">
+        <span class="no">3</span><h3>广告基本信息</h3>
+        <span class="right"><button class="btn btn-sm" id="btn-edit-basic">编辑</button></span>
+      </div>
+      <div class="card-bd" id="basic-bd">
+        <div class="field"><label>商品库</label><span class="ro" id="shop-view">未选择</span></div>
+        <div class="field"><label>设置商品</label><span class="ro" id="product-view">未选择</span></div>
+        <div class="field"><label>优化目标出价</label><span class="ro" id="bid-view">—</span></div>
+        <div class="field"><label>广告名称</label><span class="ro" id="name-view">—</span></div>
+      </div>
+      <div class="card-bd" id="basic-editor" style="display:none;border-top:1px dashed var(--line);">
+        <div class="field">
+          <label>商品库</label>
+          <select id="shop-select">
+            <option value="">请选择店铺</option>
+            <option value="demo-pdd-示例店铺">demo-pdd-示例店铺</option>
+            <option value="demo-pdd-示例店铺2">demo-pdd-示例店铺2</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>账号分别设置</label>
+          <div>
+            <div class="chips" id="basic-acc-chips"></div>
+            <div class="hint" id="basic-acc-hint" style="margin-top:4px;">按已选广告户顺序，逐个设置商品</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>搜索商品全名</label>
+          <input type="text" id="product-search-input" placeholder="输入商品全名">
+          <button class="btn btn-sm" id="btn-product-search">搜索</button>
+        </div>
+        <div class="rowlist" id="product-list" style="margin:0 0 12px 120px;max-width:520px;"></div>
+        <div class="field"><label>优化目标出价</label><input type="text" id="bid-input" placeholder="元"></div>
+        <div class="field"><label>广告名称</label><input type="text" id="plan-name-input" style="min-width:440px;" placeholder="按命名模板生成"></div>
+        <div class="field"><label></label>
+          <button class="btn btn-sm btn-primary" id="btn-basic-confirm">确定</button>
+          <span class="hint" id="basic-err" style="color:var(--danger);"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 定向包 -->
+    <section class="card" id="sec-targeting">
+      <div class="card-hd">
+        <span class="no">4</span><h3>定向包</h3>
+        <span class="sub">保持默认，不做修改</span>
+      </div>
+      <div class="card-bd"><div class="chips">
+        <span class="chip chip-muted">系统默认定向</span>
+        <span class="chip chip-muted">地域：不限</span>
+        <span class="chip chip-muted">年龄：不限</span>
+      </div></div>
+    </section>
+
+    <!-- 5 创意基本信息 -->
+    <section class="card" id="sec-creative">
+      <div class="card-hd">
+        <span class="no">5</span><h3>创意基本信息</h3>
+        <span class="right"><button class="btn btn-sm" id="btn-edit-creative">编辑</button></span>
+      </div>
+      <div class="card-bd">
+        <div class="field"><label>跳转类型</label><span class="ro" id="jump-view">—</span></div>
+        <div class="field"><label>小程序路径</label><span class="ro" id="path-view">—</span></div>
+      </div>
+      <div class="card-bd" id="creative-editor" style="display:none;border-top:1px dashed var(--line);">
+        <div class="field">
+          <label>设置跳转类型</label>
+          <select id="jump-type-select">
+            <option value="">请选择</option>
+            <option value="落地页">落地页（小程序）</option>
+            <option value="商品详情页">商品详情页</option>
+          </select>
+        </div>
+        <div class="field"><label>小程序路径</label>
+          <div class="editable" id="path-editable" contenteditable="true" data-empty="1" data-ph="点击后粘贴路径"></div>
+        </div>
+        <div class="field"><label></label>
+          <button class="btn btn-sm btn-primary" id="btn-creative-confirm">确定</button>
+          <span class="hint" id="creative-err" style="color:var(--danger);"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 创意素材 -->
+    <section class="card" id="sec-material">
+      <div class="card-hd">
+        <span class="no">6</span><h3>创意素材</h3>
+        <span class="sub" id="material-state">创意包1：0 条</span>
+        <span class="right"><button class="btn btn-sm" id="btn-edit-material">编辑</button></span>
+      </div>
+      <div class="card-bd" id="material-bd">
+        <div class="hint">创意包1 当前无素材</div>
+      </div>
+      <div class="card-bd" id="material-editor" style="display:none;border-top:1px dashed var(--line);">
+        <div class="chips" id="material-chips" style="margin-bottom:10px;"><span class="hint">创意包1 暂空</span></div>
+        <button class="btn btn-sm" id="btn-add-material">＋ 添加素材</button>
+        <button class="btn btn-sm btn-primary" id="btn-material-confirm" style="margin-left:8px;">确定</button>
+      </div>
+    </section>
+
+    <div class="footer-bar">
+      <button class="btn" id="btn-generate">生成广告计划</button>
+      <button class="btn btn-primary" id="btn-submit" disabled>开始提交</button>
+    </div>
+
+    <div class="log" id="log"></div>
+
+  </main>
+</div>
+
+<!-- 弹窗：规则模版 -->
+<div class="mask" id="mask-rule">
+  <div class="modal">
+    <h4>引用规则模版</h4>
+    <div class="bd"><div class="rowlist" id="rule-list"></div></div>
+    <div class="ft"><button class="btn" data-close="mask-rule">取消</button>
+      <button class="btn btn-primary" id="btn-rule-confirm">确定</button></div>
+  </div>
+</div>
+
+<!-- 弹窗：媒体账号 -->
+<div class="mask" id="mask-acc">
+  <div class="modal">
+    <h4>选择媒体账号</h4>
+    <div class="bd">
+      <div class="field" style="margin-bottom:10px;">
+        <input type="text" id="acc-search-input" placeholder="输入广告户名称搜索" style="flex:1;">
+        <button class="btn btn-sm" id="btn-acc-search">搜索</button>
+        <button class="btn btn-sm" id="btn-acc-clear">清空</button>
+      </div>
+      <div class="rowlist" id="acc-list"></div>
+    </div>
+    <div class="ft">
+      <button class="btn" id="btn-acc-selectall">全选</button>
+      <button class="btn btn-primary" id="btn-acc-confirm">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 弹窗：素材文件夹 -->
+<div class="mask" id="mask-mat">
+  <div class="modal">
+    <h4>文件夹目录</h4>
+    <div class="bd">
+      <div class="field" style="margin-bottom:10px;">
+        <input type="text" id="folder-search" placeholder="输入商品ID检索素材文件夹" style="flex:1;">
+        <button class="btn btn-sm" id="btn-folder-search">搜索</button>
+      </div>
+      <div class="rowlist" id="folder-list"></div>
+      <div style="margin-top:10px;" class="hint" id="folder-stat"></div>
+    </div>
+    <div class="ft">
+      <button class="btn" id="btn-material-all">全部</button>
+      <button class="btn btn-primary" id="btn-mat-confirm">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   mock 数据（与 data/*.csv 一致，为便于 file:// 直接打开而内联）
+   ------------------------------------------------------------------ */
+const T = {
+  similarity_pass: 0.90,
+  material_max_take: 15,
+  plans_per_account: 2,
+  plans_per_product: 4,
+  round_mode: "floor",
+  shop_key: "demo-pdd-示例店铺",
+  business_unit: "示例业务单元",
+  brand: "无",
+  landing_page_type: "小程序",
+  group: "示例一组",
+  operator: "示例操作人",
+  platform_code: "pdd",
+  ts: "20260917-113000",
+  rand_id: "A7F3C1"
+};
+
+const PRODUCTS = [
+  {name:"德绒保暖护膝中老年秋冬加绒加厚款", id:"PDD-330011", bid:"12.7", lp:"https://lp.example.com/330011", dir:"素材库/护膝-德绒-PDD-330011/视频", abbr:"护膝", n:18},
+  {name:"艾草自发热护膝保暖老寒腿男女通用", id:"PDD-330012", bid:"11.0", lp:"https://lp.example.com/330012", dir:"素材库/护膝-艾草-PDD-330012/视频", abbr:"护膝", n:9},
+  {name:"折叠便携泡脚桶加高过膝家用可收纳", id:"PDD-330013", bid:"15.2", lp:"https://lp.example.com/330013", dir:"素材库/泡脚桶-折叠-PDD-330013/视频", abbr:"泡脚桶", n:22},
+  {name:"免抽气真空压缩袋收纳套装加厚", id:"PDD-330014", bid:"8.4", lp:"https://lp.example.com/330014", dir:"素材库/压缩袋-PDD-330014/视频", abbr:"压缩袋", n:6},
+  {name:"记忆棉护腰靠垫办公室久坐腰托", id:"PDD-330015", bid:"9.8", lp:"https://lp.example.com/330015", dir:"素材库/腰靠垫-PDD-330015/视频", abbr:"腰靠垫", n:12}
+];
+
+const ACCOUNTS = ["ACC-1001","ACC-1002","ACC-1003","ACC-1004","ACC-1005","ACC-1006","ACC-1007","ACC-1008","ACC-1009"];
+const ACCOUNT_MAP = {
+  "德绒保暖护膝中老年秋冬加绒加厚款":["ACC-1001","ACC-1002"],
+  "艾草自发热护膝保暖老寒腿男女通用":["ACC-1001","ACC-1003"],
+  "折叠便携泡脚桶加高过膝家用可收纳":["ACC-1004","ACC-1005"],
+  "免抽气真空压缩袋收纳套装加厚":["ACC-1004","ACC-1006"],
+  "记忆棉护腰靠垫办公室久坐腰托":["ACC-1007","ACC-1008"]
+};
+
+/* ------------------------------------------------------------------
+   状态
+   ------------------------------------------------------------------ */
+const S = {
+  rule:null,
+  selectedAccounts:[],
+  shop:"",
+  productsByAccount:{},   // {户: 商品全名}
+  selectedProducts:[],
+  bid:"",
+  planName:"",
+  jumpType:"",
+  path:"",
+  materials:[],
+  generated:false,
+  submitted:false,
+  currentAccountIdx:0
+};
+
+const $ = (id)=>document.getElementById(id);
+function log(msg, kind){
+  const el = $("log");
+  const tag = kind === "ok" ? "<b>" : (kind === "err" ? "<i>" : "");
+  const end = kind === "ok" ? "</b>" : (kind === "err" ? "</i>" : "");
+  el.innerHTML += tag + msg + end + "<br>";
+  el.scrollTop = el.scrollHeight;
+}
+function markStep(n){ $("r"+n).classList.add("done"); }
+
+/* ------------------------------------------------------------------
+   1 规则模版
+   ------------------------------------------------------------------ */
+const RULES = [
+  {id:"R-001", name:"默认模版A", desc:"含默认出价/预算/定向/转化目标，一键套用"},
+  {id:"R-002", name:"2222", desc:"备用模版"}
+];
+function renderRules(){
+  $("rule-list").innerHTML = RULES.map((r,i)=>
+    '<div class="rowitem" data-rule="'+r.id+'"><span>'+r.id+' · '+r.name+'</span>'+
+    '<span class="meta">'+r.desc+'</span></div>').join("");
+  $("rule-list").querySelectorAll(".rowitem").forEach(el=>{
+    el.onclick = ()=>{
+      $("rule-list").querySelectorAll(".rowitem").forEach(x=>x.classList.remove("sel"));
+      el.classList.add("sel");
+    };
+  });
+}
+$("btn-rule-template").onclick = ()=>{ renderRules(); $("mask-rule").classList.add("on"); };
+$("btn-rule-confirm").onclick = ()=>{
+  const sel = $("rule-list").querySelector(".rowitem.sel");
+  if(!sel){ return; }
+  S.rule = sel.getAttribute("data-rule");
+  $("rule-state").textContent = "已引用：" + S.rule;
+  $("mask-rule").classList.remove("on");
+  markStep(1);
+  log("[1] 已引用规则模版 " + S.rule + "（出价/预算/定向/转化目标取模版默认值）","ok");
+};
+
+/* ------------------------------------------------------------------
+   2 媒体账号
+   ------------------------------------------------------------------ */
+function renderAccList(list){
+  $("acc-list").innerHTML = (list.length? list : ACCOUNTS).map(a=>
+    '<div class="rowitem" data-acc="'+a+'"><span>'+a+'</span>'+
+    '<span class="meta">'+(S.selectedAccounts.includes(a)?"已选":"")+'</span></div>').join("");
+  $("acc-list").querySelectorAll(".rowitem").forEach(el=>{
+    el.onclick = ()=>el.classList.toggle("sel");
+  });
+}
+$("btn-edit-accounts").onclick = ()=>{ renderAccList(); $("mask-acc").classList.add("on"); };
+$("btn-acc-search").onclick = ()=>{
+  const raw = $("acc-search-input").value.trim();
+  const kws = raw.split(/[^0-9A-Za-z\-]+/).filter(Boolean);
+  const hit = kws.length ? ACCOUNTS.filter(a=>kws.some(k=>a.includes(k))) : ACCOUNTS;
+  renderAccList(hit);
+  log("[2] 搜索广告户：“"+raw+"” → "+hit.length+" 条");
+};
+$("btn-acc-clear").onclick = ()=>{
+  $("acc-search-input").value = "";
+  $("acc-list").querySelectorAll(".rowitem").forEach(x=>x.classList.remove("sel"));
+  log("[2] 已清空搜索结果与勾选");
+};
+$("btn-acc-selectall").onclick = ()=>{
+  $("acc-list").querySelectorAll(".rowitem").forEach(x=>x.classList.add("sel"));
+};
+$("btn-acc-confirm").onclick = ()=>{
+  S.selectedAccounts = [...$("acc-list").querySelectorAll(".rowitem.sel")]
+    .map(x=>x.getAttribute("data-acc"));
+  $("acc-chips").innerHTML = S.selectedAccounts.length
+    ? S.selectedAccounts.map(a=>'<span class="chip">'+a+'</span>').join("")
+    : '<span class="hint">尚未选择广告户</span>';
+  $("acc-state").textContent = "已选 " + S.selectedAccounts.length + " 个";
+  $("mask-acc").classList.remove("on");
+  markStep(2);
+  log("[2] 已选广告户：" + S.selectedAccounts.join(", "),"ok");
+};
+document.querySelectorAll("[data-close]").forEach(b=>{
+  b.onclick = ()=>$(b.getAttribute("data-close")).classList.remove("on");
+});
+
+/* ------------------------------------------------------------------
+   3 广告基本信息
+   ------------------------------------------------------------------ */
+let basicIdx = 0;
+S.planRecords = {};
+
+function renderBasicAccChips(){
+  $("basic-acc-chips").innerHTML = S.selectedAccounts.map((a,i)=>
+    '<span class="chip'+(i===basicIdx?'':' chip-muted')+'" data-idx="'+i+'">'
+    + (S.planRecords[a] ? "✓ " : "") + a + '</span>').join("");
+  $("basic-acc-chips").querySelectorAll(".chip").forEach(el=>{
+    el.onclick = ()=>switchAccountForBasic(+el.getAttribute("data-idx"));
+  });
+}
+
+$("btn-edit-basic").onclick = ()=>{
+  if(!S.selectedAccounts.length){ log("[3] 请先选择媒体账号","err"); return; }
+  $("basic-editor").style.display = "block";
+  switchAccountForBasic(0);
+  renderBasicAccChips();
+  log("[3] 打开广告基本信息编辑器");
+};
+$("btn-product-search").onclick = ()=>{
+  const kw = $("product-search-input").value.trim();
+  const hit = PRODUCTS.filter(p=>p.name === kw);
+  if(!hit.length){
+    $("product-list").innerHTML = '<div class="hint" style="color:var(--danger)">未找到该商品全名</div>';
+    log("[3] 搜索商品全名：“"+kw+"” → 0 条","err");
+    return;
+  }
+  $("product-list").innerHTML = hit.map(p=>
+    '<div class="rowitem" data-pid="'+p.id+'"><span>'+p.name+'</span>'+
+    '<span class="meta">'+p.id+'</span></div>').join("");
+  $("product-list").querySelectorAll(".rowitem").forEach(el=>{
+    el.onclick = ()=>{
+      $("product-list").querySelectorAll(".rowitem").forEach(x=>x.classList.remove("sel"));
+      el.classList.add("sel");
+    };
+  });
+  log("[3] 搜索商品全名：“"+kw+"” → "+hit.length+" 条");
+};
+
+/* 关键：切换广告户时，商品库、已选商品、出价、名称被静默重置（真实界面行为） */
+function switchAccountForBasic(idx){
+  S.currentAccountIdx = idx;
+  $("shop-select").value = "";
+  $("product-list").innerHTML = "";
+  $("product-search-input").value = "";
+  $("bid-input").value = "";
+  $("plan-name-input").value = "";
+  if(typeof renderBasicAccChips === "function") renderBasicAccChips();
+  $("basic-acc-hint").textContent = "正在设置第 " + (idx+1) + " 个广告户："
+    + (S.selectedAccounts[idx] || "—") + "（商品库已重置，需重新选择）";
+  log("[3] 切换至广告户 " + (S.selectedAccounts[idx]||"—") + " → 商品库被重置，需重新选择店铺","err");
+}
+
+$("btn-basic-confirm").onclick = ()=>{
+  const errs = [];
+  if(!$("shop-select").value) errs.push("商品库未选择");
+  const sel = $("product-list").querySelector(".rowitem.sel");
+  if(!sel) errs.push("未设置商品");
+  if(!$("bid-input").value.trim()) errs.push("出价为空");
+  if(!$("plan-name-input").value.trim()) errs.push("广告名称为空");
+  if(errs.length){
+    $("basic-err").textContent = "校验未通过：" + errs.join(" / ");
+    log("[3] 校验未通过：" + errs.join(" / "),"err");
+    return;
+  }
+  $("basic-err").textContent = "";
+  const acc = S.selectedAccounts[basicIdx];
+  const pname = sel.querySelector("span").textContent;
+  S.shop = $("shop-select").value;
+  S.bid = $("bid-input").value.trim();
+  S.planName = $("plan-name-input").value.trim();
+  S.productsByAccount[acc] = pname;
+  S.selectedProducts.push(sel.getAttribute("data-pid"));
+  S.planRecords[acc] = {商品:pname, 出价:S.bid, 名称:S.planName};
+
+  if(basicIdx < S.selectedAccounts.length - 1){
+    log("[3] 广告户 " + acc + " 已确定（" + pname + "，出价 " + S.bid + "）","ok");
+    switchAccountForBasic(basicIdx + 1);
+    return;
+  }
+  $("shop-view").textContent = S.shop;
+  $("product-view").textContent = Object.keys(S.productsByAccount).length + " 个广告户已设置商品";
+  $("bid-view").textContent = S.bid + " 元";
+  $("name-view").textContent = S.planName;
+  $("basic-editor").style.display = "none";
+  markStep(3);
+  log("[3] 全部广告户设置完成，出价=" + S.bid + "，末条名称=" + S.planName,"ok");
+};
+
+/* ------------------------------------------------------------------
+   5 创意基本信息
+   ------------------------------------------------------------------ */
+$("btn-edit-creative").onclick = ()=>{
+  $("creative-editor").style.display = "block";
+  /* 真实行为：字段里预置一条旧路径，直接写入会与旧值拼接 */
+  const p = $("path-editable");
+  p.textContent = "pages/old-placeholder/index";
+  p.setAttribute("data-empty","0");
+  log("[5] 打开创意基本信息，小程序路径预置旧值：“pages/old-placeholder/index”");
+};
+$("btn-creative-confirm").onclick = ()=>{
+  const errs = [];
+  if(!$("jump-type-select").value) errs.push("跳转类型未选择");
+  const v = $("path-editable").textContent.trim();
+  if(!v) errs.push("小程序路径为空");
+  if(v && !/^https?:\/\/lp\.example\.com\/\d+$/.test(v)) errs.push("小程序路径格式异常（疑似拼接残留）："+v);
+  if(errs.length){
+    $("creative-err").textContent = "校验未通过：" + errs.join(" / ");
+    log("[5] 校验未通过：" + errs.join(" / "),"err");
+    return;
+  }
+  $("creative-err").textContent = "";
+  S.jumpType = $("jump-type-select").value;
+  S.path = v;
+  $("jump-view").textContent = S.jumpType;
+  $("path-view").textContent = v;
+  $("creative-editor").style.display = "none";
+  markStep(5);
+  log("[5] 已确定：跳转类型=" + S.jumpType + "，路径=" + v,"ok");
+};
+
+/* ------------------------------------------------------------------
+   6 创意素材
+   ------------------------------------------------------------------ */
+let folderHits = [];
+$("btn-edit-material").onclick = ()=>{
+  $("material-editor").style.display = "block";
+  log("[6] 打开创意素材编辑器（创意包1 原有素材已在流程中被清除）");
+};
+$("btn-add-material").onclick = ()=>{ $("mask-mat").classList.add("on"); };
+$("btn-folder-search").onclick = ()=>{
+  const kw = $("folder-search").value.trim();
+  const hit = PRODUCTS.filter(p=>p.id === kw);
+  if(!hit.length){
+    $("folder-list").innerHTML = '<div class="hint" style="color:var(--danger)">未检索到素材文件夹</div>';
+    $("folder-stat").textContent = "";
+    folderHits = [];
+    return;
+  }
+  folderHits = Array.from({length:hit[0].n}, (_,i)=> hit[0].id + "-V" + String(i+1).padStart(3,"0"));
+  $("folder-list").innerHTML = '<div class="rowitem" data-folder="'+hit[0].dir+'">'+
+    '<span>'+hit[0].dir+'</span><span class="meta">'+folderHits.length+' 个视频</span></div>';
+  $("folder-stat").textContent = "文件夹内共 " + folderHits.length + " 个视频（单次上限 "
+    + T.material_max_take + " 条）";
+  $("folder-list").querySelectorAll(".rowitem").forEach(el=>{
+    el.onclick = ()=>el.classList.toggle("sel");
+  });
+  log("[6] 按商品ID检索：“"+kw+"” → "+folderHits.length+" 个视频（上限 "+T.material_max_take+"）");
+};
+$("btn-material-all").onclick = ()=>{
+  const take = folderHits.slice(0, T.material_max_take);
+  S.materials = take;
+  $("material-chips").innerHTML = take.map(v=>'<span class="chip">'+v+'</span>').join("")
+    || '<span class="hint">创意包1 暂空</span>';
+  $("folder-list").querySelectorAll(".rowitem").forEach(x=>x.classList.add("sel"));
+  log("[6] 点击“全部” → 取用 "+take.length+" 条"
+    + (folderHits.length > T.material_max_take ? "（超出上限部分直接丢弃）" : ""));
+};
+$("btn-mat-confirm").onclick = ()=>{ $("mask-mat").classList.remove("on"); };
+$("btn-material-confirm").onclick = ()=>{
+  if(!S.materials.length){ log("[6] 素材为空，无法确定","err"); return; }
+  $("material-bd").innerHTML = '<div class="chips">'+
+    S.materials.map(v=>'<span class="chip">'+v+'</span>').join("")+'</div>';
+  $("material-state").textContent = "创意包1：" + S.materials.length + " 条";
+  $("material-editor").style.display = "none";
+  markStep(6);
+  log("[6] 已确定素材 "+S.materials.length+" 条","ok");
+};
+
+/* ------------------------------------------------------------------
+   生成 / 提交
+   ------------------------------------------------------------------ */
+$("btn-generate").onclick = ()=>{
+  const need = [];
+  if(!S.rule) need.push("规则模版");
+  if(!S.selectedAccounts.length) need.push("媒体账号");
+  if(!S.shop) need.push("广告基本信息");
+  if(!S.jumpType) need.push("创意基本信息");
+  if(!S.materials.length) need.push("创意素材");
+  if(need.length){ log("[生成] 前置未完成："+need.join(" / "),"err"); return; }
+  S.generated = true;
+  $("btn-submit").disabled = false;
+  const total = S.selectedAccounts.length;
+  log("[生成] 已生成 "+total+" 条广告计划草稿（"
+    + S.selectedAccounts.join(", ") + "），可提交","ok");
+  markStep(4);
+};
+$("btn-submit").onclick = ()=>{
+  S.submitted = true;
+  $("btn-submit").disabled = true;
+  log("[提交] 已提交 "+S.selectedAccounts.length+" 条广告计划","ok");
+  window.__done = true;
+};
+
+/* 供自动化脚本读取运行结果 */
+window.__mock = {
+  state: S,
+  dump(){
+    return {
+      rule:S.rule, accounts:S.selectedAccounts, shop:S.shop,
+      products:S.selectedProducts, bid:S.bid, planName:S.planName,
+      jumpType:S.jumpType, path:S.path, materials:S.materials,
+      generated:S.generated, submitted:S.submitted
+    };
+  }
+};
+</script>
+</body>
+</html>
